@@ -1,6 +1,6 @@
 { "id": "demo_banglejs",
   "name": "Bangle.js Demo",
-  "shortName":"Short Name",
+  "shortName":"Demo",
   "version":"0.01",
   "description": "Displays one character from the text 'Banglejs' and animates it twisting and changing size. Press button to cycle through letters - the idea is you have one Bangle for each letter!",
   "icon": "app.png",
