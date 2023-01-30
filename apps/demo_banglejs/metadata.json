@@ -1,5 +1,5 @@
 { "id": "demo_banglejs",
-  "name": "My app's human readable name",
+  "name": "Bangle.js Demo",
   "shortName":"Short Name",
   "version":"0.01",
   "description": "Displays one character from the text 'Banglejs' and animates it twisting and changing size. Press button to cycle through letters - the idea is you have one Bangle for each letter!",
