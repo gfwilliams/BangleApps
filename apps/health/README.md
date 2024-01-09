@@ -2,8 +2,6 @@
 
 Logs health data to a file in a defined interval, and provides an app to view it
 
-**BETA - requires firmware 2v11 or later**
-
 ## Usage
 
 Once installed, health data is logged automatically.
@@ -15,7 +13,7 @@ To view data, run the `Health` app from your watch.
 Stores:
 
 * Heart rate
-* Step count
+* Step count (can calculate distance if myprofile is installed and stride length is set)
 * Movement
 
 ## Settings
