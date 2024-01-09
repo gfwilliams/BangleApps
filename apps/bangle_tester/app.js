@@ -4,7 +4,7 @@ Bangle.drawWidgets();
 var devices = {};
 //NRF.setAdvertising({},{name:"Off!"});
 function flashDevice(device) {
-  require("ble_simple_uart").write(device, `\x10NRF.sleep();E.showMessage("Loading Test");Terminal.setConsole(1);Bangle.showTestScreen();\n`).
+  require("ble_simple_uart").write(device, `\x10NRF.sleep();E.showMessage("Loading Test");Terminal.setConsole(1);Bangle.setPollInterval(800);Bangle.showTestScreen();\n`).
   then( function() {
     print('Done!');
   }).catch(function(e) {
