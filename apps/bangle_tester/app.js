@@ -12,7 +12,7 @@ function flashDevice(device) {
   })).
   then( function() {
     print('Upload code');
-    return require("ble_simple_uart").write(device, `\x10NRF.sleep();require('Storage').writeJSON('welcome.json',{welcomed: false});E.showMessage("Loading Test");Terminal.setConsole(1);Bangle.setPollInterval(800);Bangle.showTestScreen();\n`);
+    return require("ble_simple_uart").write(device, `\x10NRF.sleep();Terminal.setConsole(1);if(require("Storage").list().length<10){E.showMessage("Factory Reset...");Bangle.factoryReset(true);}require('Storage').writeJSON('welcome.json',{welcomed: false});E.showMessage("Loading Test...");Bangle.setPollInterval(800);Bangle.showTestScreen();\n`);
   }).
   then( function() {
     print('Done!');
@@ -29,7 +29,7 @@ function search() {
         devices[dev.id] = dev;
         newDevs.push(dev.id.split(" ")[0]);
       }
-      if (devices[dev.id].firstSeen+20000 < Date.now())
+      if (devices[dev.id].firstSeen+1000 < Date.now())
         chosen = dev;
     });
     var msg = "";
