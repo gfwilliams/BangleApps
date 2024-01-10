@@ -1,7 +1,7 @@
 { "id": "bangle_tester",
   "name": "Bangle.js Tester",
   "shortName":"Bangle Test",
-  "version":"0.03",
+  "version":"0.04",
   "description": "Connects to any Bangle.js in range and runs a test harness on it. Swipe the screen to turn the Bangle off and set the welcome screen to appear next time.",
   "icon": "app.png",
   "tags": "tool",
