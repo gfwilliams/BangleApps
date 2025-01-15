@@ -38,6 +38,7 @@
       // if we're in an app that has a back button, run the callback for it
       if (global.BACK && countHandlers("swipe")<=settings.standardNumSwipeHandlers && countHandlers("drag")<=settings.standardNumDragHandlers) {
         global.BACK();
+        E.stopEventPropagation();
       }
     }
   }
@@ -47,14 +48,14 @@
   function enabledForApp(app) {
     if (!settings) return true;
     if (settings.mode === 0) {
-      return !(settings.apps.filter((a) => a.src === app).length > 0);
+      return !(settings.apps.filter((a) => (a.src===app)||(a.files&&a.files.includes(app))).length > 0); // The `a.src===app` and `a.files&&...` checks are for backwards compatibility. Otherwise only `a.files.includes(app)` is needed.
     } else if (settings.mode === 1) {
-      return settings.apps.filter((a) => a.src === app).length > 0;
+      return settings.apps.filter((a) => (a.src===app)||(a.files&&a.files.includes(app))).length > 0;
     } else {
       return settings.mode === 2 ? true : false;
     }
   }
 
   // Listen to left to right swipe
-  Bangle.on("swipe", goBack);
+  Bangle.prependListener("swipe", goBack);
 })();

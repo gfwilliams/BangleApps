@@ -2,7 +2,7 @@
 
 This app allows you to add/modify any alarms, timers and events.
 
-Optional: When a keyboard app is detected, you can add a message to display when any of these is triggered.
+Optional: When a keyboard app is detected, you can add a message to display when any of these is triggered.  If a datetime input app (e.g. datetime_picker) is detected, it will be used for the selection of the date+time of events.
 
 It uses the [`sched` library](https://github.com/espruino/BangleApps/blob/master/apps/sched) to handle the alarm scheduling in an efficient way that can work alongside other apps.
 
@@ -20,6 +20,8 @@ It uses the [`sched` library](https://github.com/espruino/BangleApps/blob/master
   - `Disable All` &rarr; Disable _all_ enabled alarms & timers
   - `Delete All` &rarr; Delete _all_ alarms & timers
 
+On Bangle.js 2 it's possible to toggle alarms, timers and events from the main menu. This is done by clicking the indicator icons of corresponding entries. Or long pressing anywhere on them.
+
 ## Creator
 
 - [Gordon Williams](https://github.com/gfwilliams)
@@ -29,6 +31,7 @@ It uses the [`sched` library](https://github.com/espruino/BangleApps/blob/master
 - [Alessandro Cocco](https://github.com/alessandrococco) - New UI, full rewrite, new features
 - [Sabin Iacob](https://github.com/m0n5t3r) - Auto snooze support
 - [storm64](https://github.com/storm64) - Fix redrawing in submenus
+- [thyttan](https://github.com/thyttan) - Toggle alarms directly from main menu.
 
 ## Attributions
 

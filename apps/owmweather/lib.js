@@ -14,6 +14,7 @@ function parseWeather(response) {
     weather.wind = owmData.wind.speed;
     weather.loc = owmData.name;
     weather.txt = owmData.weather[0].main;
+    weather.hpa = owmData.main.pressure || 0;
 
     if (weather.wdir != null) {
       let deg = weather.wdir;

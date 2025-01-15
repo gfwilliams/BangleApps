@@ -1,187 +1,133 @@
-/* contacts.js */
-
 var Layout = require("Layout");
 
-const W = g.getWidth();
-const H = g.getHeight();
+var contacts = require('Storage').readJSON("contacts.json", true) || [];
 
-var wp = require('Storage').readJSON("contacts.json", true) || [];
-// Use this with corrupted contacts
-//var wp = [];
+function writeContacts() {
+  require('Storage').writeJSON("contacts.json", contacts);
+}
 
-var key; /* Shared between functions, typically wp name */
-
-function writeContact() {
-  require('Storage').writeJSON("contacts.json", wp);
+function callNumber (number) {
+  E.showMessage('Calling ' + number + '...');
+  setTimeout(() => mainMenu(), 2000);
+  Bluetooth.println(JSON.stringify({
+    t:"intent",
+    target:"activity",
+    action:"android.intent.action.CALL",
+    flags:["FLAG_ACTIVITY_NEW_TASK"],
+    categories:["android.intent.category.DEFAULT"],
+    data: 'tel:' + number,
+  }))
 }
 
 function mainMenu() {
   var menu = {
+    "": {
+      "title": "Contacts",
+    },
     "< Back" : Bangle.load
   };
-  if (Object.keys(wp).length==0) Object.assign(menu, {"NO Contacts":""});
-  else for (let id in wp) {
-    let i = id;
-    menu[wp[id]["name"]]=()=>{ decode(i); };
+  if (!contacts.length) {
+    menu['No Contacts'] = () => {};
   }
-  menu["Add"]=addCard;
-  menu["Remove"]=removeCard;
+  contacts.forEach((e, idx) => {
+    menu[e.name] = () => showContact(idx)
+  })
+  menu["Add Contact"] = addContact;
   g.clear();
   E.showMenu(menu);
 }
 
-function decode(pin) {
-  var i = wp[pin];
-  var l = i["name"] + "\n" + i["number"];
-  var la = new Layout ({
-    type:"v", c: [
-      {type:"txt", font:"10%", pad:1, fillx:1, filly:1, label: l},
-      {type:"btn", font:"10%", pad:1, fillx:1, filly:1, label:"OK", cb:l=>{mainMenu();}}
-    ], lazy:true});
+function showContact(idx) {
   g.clear();
-  la.render();
+  var name = contacts[idx].name;
+  let longName = g.setFont("6x8:2").stringWidth(name) >= g.getWidth();
+  var number = contacts[idx].number;
+  let longNumber = g.setFont("6x8:2").stringWidth(number) >= g.getWidth();
+  (new Layout ({
+    type:"v",
+    c: [
+      {type: 'h', filly: 3, fillx:1, c: [
+        {type:"btn", font:"6x8", pad:1, fillx:1, filly:1, label: "<- Back to list", cb: mainMenu},
+        {type:"btn", pad:1, fillx:1, filly:3, src: require("heatshrink").decompress(atob("jUawYGDgVJkgQGBAOSBAsJkALBBIoaCDogaCAQYXBgIIFkmAC4IIFyVAgAIGGQUJHwo4FAo2QBwICDNAVAkgCEEAYUFEAQUFE34mRPwgmEcYgmDUg8AgjLGgAA==")),
+          cb: () => (
+            E.showPrompt("Delete Contact '" + name + "'?", )
+              .then((res) => { if (res) { deleteContact(idx) } else { mainMenu() } })
+          )
+        },
+      ]},
+      {type:"txt", font:longName ? "6x8" : "6x8:2", pad:1, fillx:2, filly:3, label: longName ? name.slice(0, name.length/2) + '\n' + name.slice(name.length/2) : name},
+      {type:"txt", font: "6x8:2", pad:1, fillx:2, filly:3, label: longNumber ? number.slice(0, number.length/2) + '\n' + number.slice(number.length/2) : number},
+      {type: 'h', filly: 3, fillx:1, c: [
+          {type:"btn", pad:1, fillx:1, filly:3, src:atob("GBiBAAAAAAAAAAAAAB8AAB+AAB+AAB+AAB+AAA+AAA8AAA4AAAYAAAcAAAMAAAGAAAHB8ADz+AA/+AAf+AAH+AAA+AAAAAAAAAAAAA=="), cb: l => callNumber(number)},
+        ]},
+    ],
+    lazy:true
+  })).render();
 }
 
-function showNumpad(text, key_, callback) {
-  key = key_;
-  E.showMenu();
-  function addDigit(digit) {
-    key+=digit;
-    if (1) {
-      l = text[key.length];
-      switch (l) {
-        case '.': case ' ': case "'":
-          key+=l;
-          break;
-        case 'd': case 'D': default:
-          break;
-      }
+function showNumpad() {
+  return new Promise((resolve, reject) => {
+    let number = ''
+    E.showMenu();
+    function addDigit(digit) {
+      number += digit;
+      Bangle.buzz(20);
+      update();
     }
-    Bangle.buzz(20);
-    update();
-  }
-  function update() {
-    g.reset();
-    g.clearRect(0,0,g.getWidth(),23);
-    s = key + text.substr(key.length, 999);
-    g.setFont("Vector:24").setFontAlign(1,0).drawString(s,g.getWidth(),12);
-  }
-  ds="12%";
-  var numPad = new Layout ({
-    type:"v", c: [{
-      type:"v", c: [
-        {type:"", height:24},
-        {type:"h",filly:1, c: [
-          {type:"btn", font:ds, width:58, label:"7", cb:l=>{addDigit("7");}},
-          {type:"btn", font:ds, width:58, label:"8", cb:l=>{addDigit("8");}},
-          {type:"btn", font:ds, width:58, label:"9", cb:l=>{addDigit("9");}}
-        ]},
-        {type:"h",filly:1, c: [
-          {type:"btn", font:ds, width:58, label:"4", cb:l=>{addDigit("4");}},
-          {type:"btn", font:ds, width:58, label:"5", cb:l=>{addDigit("5");}},
-          {type:"btn", font:ds, width:58, label:"6", cb:l=>{addDigit("6");}}
-        ]},
-        {type:"h",filly:1, c: [
-          {type:"btn", font:ds, width:58, label:"1", cb:l=>{addDigit("1");}},
-          {type:"btn", font:ds, width:58, label:"2", cb:l=>{addDigit("2");}},
-          {type:"btn", font:ds, width:58, label:"3", cb:l=>{addDigit("3");}}
-        ]},
-        {type:"h",filly:1, c: [
-          {type:"btn", font:ds, width:58, label:"0", cb:l=>{addDigit("0");}},
-          {type:"btn", font:ds, width:58, label:"C", cb:l=>{key=key.slice(0,-1); update();}},
-          {type:"btn", font:ds, width:58, id:"OK", label:"OK", cb:callback}
-        ]}
-      ]}
-    ], lazy:true});
-  g.clear();
-  numPad.render();  
-  update();
-}
-
-function removeCard() {
-  var menu = {
-    "" : {title : "Select Contact"},
-    "< Back" : mainMenu
-  };
-  if (Object.keys(wp).length==0) Object.assign(menu, {"No Contacts":""});
-  else {
-    wp.forEach((val, card) => {
-      const name = wp[card].name;
-      menu[name]=()=>{
-        E.showMenu();
-        var confirmRemove = new Layout (
-          {type:"v", c: [
-            {type:"txt", font:"15%", pad:1, fillx:1, filly:1, label:"Delete"},
-            {type:"txt", font:"15%", pad:1, fillx:1, filly:1, label:name},
-            {type:"h", c: [
-              {type:"btn", font:"15%", pad:1, fillx:1, filly:1, label: "YES", cb:l=>{
-                wp.splice(card, 1);
-                writeContact();
-                mainMenu();
-              }},
-              {type:"btn", font:"15%", pad:1, fillx:1, filly:1, label: " NO", cb:l=>{mainMenu();}}
+    function removeDigit() {
+      number = number.slice(0, -1);
+      Bangle.buzz(20);
+      update();
+    }
+    function update() {
+      g.reset();
+      g.clearRect(0,0,g.getWidth(),23);
+      g.setFont("Vector:24").setFontAlign(1,0).drawString(number, g.getWidth(),12);
+    }
+    const ds="12%";
+    const digitBtn = (digit) => ({type:"btn", font:ds, width:58, label:digit, cb:l=>{addDigit(digit);}});
+    var numPad = new Layout ({
+      type:"v", c: [{
+        type:"v", c: [
+          {type:"", height:24},
+          {type:"h",filly:1, c: [digitBtn("1"), digitBtn("2"), digitBtn("3")]},
+          {type:"h",filly:1, c: [digitBtn("4"), digitBtn("5"), digitBtn("6")]},
+          {type:"h",filly:1, c: [digitBtn("7"), digitBtn("8"), digitBtn("9")]},
+          {type:"h",filly:1, c: [
+              {type:"btn", font:ds, width:58, label:"C", cb: removeDigit},
+              digitBtn('0'),
+              {type:"btn", font:ds, width:58, id:"OK", label:"OK", cb: l => resolve(number)}
             ]}
-          ], lazy:true});
+        ]}
+      ], lazy:true});
+    g.clear();
+    numPad.render();
+    update();
+  });
+}
+
+function deleteContact(idx) {
+  contacts.splice(idx, 1);
+  writeContacts();
+  mainMenu();
+}
+
+function addContact() {
+  require("textinput").input({text:""})
+    .then(name => {
+      name = name.trim();
+      if (name !== "") {
         g.clear();
-        confirmRemove.render();
-      };
+        showNumpad().then((number) => {
+          contacts.push({name: name, number: number});
+          writeContacts();
+          mainMenu();
+        })
+      } else {
+        E.showMessage("Invalid name");
+        setTimeout(() => mainMenu(), 1000);
+      }
     });
-  }
-  E.showMenu(menu);
-}
-
-function askPosition(callback) {
-  let full = "";
-  showNumpad("dddDDDddd", "", function() {
-    callback(key, "");
-  });
-}
-
-function createContact(lat, name) {
-  let n = {};
-  n["name"] = name;
-  n["number"] = lat;
-  wp.push(n);
-  print("add -- contacts", wp);
-  writeContact();
-}
-
-function addCardName2(key) {
-  g.clear();
-  askPosition(function(lat, lon) {
-      print("position -- ", lat, lon);
-      createContact(lat, result);
-      mainMenu();
-  });
-}
-
-function addCardName(key) {
-  result = key;
-  if (wp[result]!=undefined) {
-  E.showMenu();
-  var alreadyExists = new Layout (
-    {type:"v", c: [
-      {type:"txt", font:Math.min(15,100/result.length)+"%", pad:1, fillx:1, filly:1, label:result},
-      {type:"txt", font:"12%", pad:1, fillx:1, filly:1, label:"already exists."},
-      {type:"h", c: [
-        {type:"btn", font:"10%", pad:1, fillx:1, filly:1, label: "REPLACE", cb:l=>{ addCardName2(key); }},
-        {type:"btn", font:"10%", pad:1, fillx:1, filly:1, label: "CANCEL", cb:l=>{mainMenu();}}
-      ]}
-    ], lazy:true});
-  g.clear();
-  alreadyExists.render();
-     return;
-  }
-  addCardName2(key);  
-}
-
-function addCard() {
-  require("textinput").input({text:""}).then(result => {
-    if (result != "") {
-      addCardName(result);
-    } else
-      mainMenu();
-  });
 }
 
 g.reset();

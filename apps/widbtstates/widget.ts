@@ -30,12 +30,12 @@
 		}
 	} = {
 		[State.Active]: {
-			false: "#fff",
+			false: "#000",
 			true: "#fff",
 		},
 		[State.Connected]: {
-			false: "#0ff",
-			true: "#00f",
+			false: "#00f",
+			true: "#0ff",
 		},
 	};
 
@@ -48,7 +48,7 @@
 
 			g.reset();
 
-			g.setColor(colours[state][`${g.theme.dark}`]);
+			g.setColor(colours[state][g.theme.dark as unknown as `${boolean}`]);
 
 			g.drawImage(
 				atob("CxQBBgDgFgJgR4jZMawfAcA4D4NYybEYIwTAsBwDAA=="),

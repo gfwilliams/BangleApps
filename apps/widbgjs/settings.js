@@ -43,7 +43,6 @@
         },
         'Hide Widget': {
             value: s.hide,
-            format: () => (s.hide ? 'Yes' : 'No'),
             onchange: () => {
                 s.hide = !s.hide;
                 save();
@@ -51,4 +50,4 @@
         },
         '< Back': back,
     });
-});
+})

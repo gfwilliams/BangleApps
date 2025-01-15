@@ -77,6 +77,8 @@ declare module Sched {
     }
   );
 
+  type Timer = Sched & { timer: Milliseconds };
+
   type Repeat = {
     num: number,
     interval: "day" | "week" | "month" | "year",
@@ -87,7 +89,7 @@ declare module Sched {
     defaultSnoozeMillis: number,
     defaultAutoSnooze: boolean,
     defaultDeleteExpiredTimers: boolean,
-    buzzCount: number,
+    buzzCount: number | null, // null means buzz forever
     buzzIntervalMillis: number,
     defaultAlarmPattern: string,
     defaultTimerPattern: string,
@@ -102,6 +104,8 @@ declare module Sched {
   function getActiveAlarms(alarms: Sched[], time?: Date): Sched[];
 
   function setAlarm(id: string, alarm?: NewSched): void;
+
+  function resetTimer(alarm: Timer, time?: Date): void;
 
   function getTimeToAlarm(alarm: Sched | undefined | null, time?: Date): number | undefined;
   function getTimeToAlarm(alarm?: undefined | null, time?: Date): undefined;

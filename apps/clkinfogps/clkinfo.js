@@ -91,7 +91,7 @@
   };
 
   var info = {
-    name: "Gps",
+    name: "GPS",
     items: [
       {
         name: "gridref",
@@ -124,4 +124,4 @@
   };
 
   return info;
-});
+})

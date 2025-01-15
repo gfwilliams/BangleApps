@@ -19,6 +19,9 @@
   }
 
 function popSubMenu() {
+  // FIXME: Linter complains that `data` is not defined. When I defined it 
+  // instead complained that it's not used (no-unused-vars).
+  // Also looking at `getDataStreams` it doesn't return anything so this seems wrong.
   data = getDataStreams();
 }
 function popSubMenuData(data) {
@@ -68,7 +71,7 @@ function popSubMenuData(data) {
 
 
 function getDataStreams() {
-  uri = "https://labs.waterdata.usgs.gov/sta/v1.1/Things('USGS-" +
+  const uri = "https://labs.waterdata.usgs.gov/sta/v1.1/Things('USGS-" +
     settings.loc +
     "')/Datastreams?$select=description";
   if (Bangle.http) {
@@ -78,4 +81,4 @@ function getDataStreams() {
 
   // Show the menu
   E.showMenu(menu);
-});
+})

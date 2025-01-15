@@ -1,7 +1,7 @@
 const app = "drained";
 
 // from boot.js
-declare var drainedInterval: IntervalId | undefined;
+declare let drainedInterval: IntervalId | undefined;
 if(typeof drainedInterval !== "undefined")
   drainedInterval = clearInterval(drainedInterval) as undefined;
 
@@ -54,15 +54,21 @@ const draw = () => {
     require("locale").dow(date, 0).toUpperCase();
   const x2 = x + 6;
   const y2 = y + 66;
+  const charging = Bangle.isCharging();
 
   g.reset()
     .clearRect(Bangle.appRect)
     .setFont("Vector", 55)
     .setFontAlign(0, 0)
+    .setColor(charging ? "#0f0" : g.theme.fg)
     .drawString(timeStr, x, y)
     .setFont("Vector", 24)
-    .drawString(dateStr, x2, y2)
-    .drawString(`${E.getBattery()}%`, x2, y2 + 48);
+    .drawString(dateStr, x2, y2);
+
+  if(charging)
+    g.drawString(`charging: ${E.getBattery()}%`, x2, y2 + 48);
+  else
+    g.drawString(`${E.getBattery()}%`, x2, y2 + 48);
 
   if(nextDraw) clearTimeout(nextDraw);
   nextDraw = setTimeout(() => {
@@ -72,21 +78,36 @@ const draw = () => {
 };
 
 const reload = () => {
+  let scroller: MenuInstance["scroller"] | undefined;
+  const showMenu = () => {
+    const menu: Menu = {
+      "Restore to full power": drainedRestore,
+    };
+
+    if (NRF.getSecurityStatus().advertising)
+      menu["Disable BLE"] = () => { NRF.sleep(); showMenu(); };
+    else
+      menu["Enable BLE"] = () => { NRF.wake(); showMenu(); };
+
+    menu["Settings"] = () => load("setting.app.js");
+    menu["Recovery"] = () => Bangle.showRecoveryMenu();
+    menu["Exit menu"] = reload;
+
+    if(scroller){
+      menu[""] = { selected: scroller.scroll };
+    }
+
+    if(nextDraw) clearTimeout(nextDraw);
+    ({ scroller } = E.showMenu(menu));
+  };
+
   Bangle.setUI({
     mode: "custom",
     remove: () => {
       if (nextDraw) clearTimeout(nextDraw);
       nextDraw = undefined;
     },
-    btn: () => {
-      E.showPrompt("Restore watch to full power?").then(v => {
-        if(v){
-          drainedRestore();
-        }else{
-          reload();
-        }
-      })
-    }
+    btn: showMenu
   });
   Bangle.CLOCK=1;
 
@@ -99,7 +120,7 @@ reload();
 Bangle.emit("drained", E.getBattery());
 
 // restore normal boot on charge
-const { keepStartup = true, restore = 20, exceptions = ["widdst.0"] }: DrainedSettings
+const { keepStartup = true, restore = 20, exceptions = ["widdst.0"], interval = 10 }: DrainedSettings
   = require("Storage").readJSON(`${app}.setting.json`, true) || {};
 
 // re-enable normal boot code when we're above a threshold:
@@ -115,7 +136,10 @@ function drainedRestore() { // "public", to allow users to call
 }
 
 const checkCharge = () => {
-  if(E.getBattery() < restore) return;
+  if(E.getBattery() < restore) {
+    draw();
+    return;
+  }
   drainedRestore();
 };
 
@@ -123,7 +147,10 @@ if (Bangle.isCharging())
   checkCharge();
 
 Bangle.on("charging", charging => {
-  if(charging) checkCharge();
+  if(drainedInterval)
+    drainedInterval = clearInterval(drainedInterval) as undefined;
+  if(charging)
+    drainedInterval = setInterval(checkCharge, interval * 60 * 1000);
 });
 
 if(!keepStartup){

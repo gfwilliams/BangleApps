@@ -20,7 +20,6 @@
       "< Back": () => back(),
       'Front Tap:': {
         value: (appSettings.enableTap === true),
-        format: v => v ? "On" : "Off",
         onchange: v => {
           appSettings.enableTap = v;
           writeSettings();
@@ -30,4 +29,4 @@
   }
   // Initially show the menu
   showMenu();
-});
+})

@@ -17,12 +17,12 @@
     };
     var colours = (_a = {},
         _a[1] = {
-            false: "#fff",
+            false: "#000",
             true: "#fff",
         },
         _a[2] = {
-            false: "#0ff",
-            true: "#00f",
+            false: "#00f",
+            true: "#0ff",
         },
         _a);
     WIDGETS["bluetooth"] = {
@@ -32,7 +32,7 @@
             if (state == 0)
                 return;
             g.reset();
-            g.setColor(colours[state]["".concat(g.theme.dark)]);
+            g.setColor(colours[state][g.theme.dark]);
             g.drawImage(atob("CxQBBgDgFgJgR4jZMawfAcA4D4NYybEYIwTAsBwDAA=="), this.x + 2, this.y + 2);
         },
         width: width(),

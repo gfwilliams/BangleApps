@@ -31,14 +31,14 @@ let draw = function() {
 };
 
 let clockInfoDraw = (itm, info, options) => {
-  let texty = options.y+41;
+  //let texty = options.y+41;
   g.reset().setFont("7Seg").setColor(g.theme.bg).setBgColor(g.theme.fg);
   if (options.focus) g.setBgColor("#FF0");
   g.clearRect({x:options.x,y:options.y,w:options.w,h:options.h,r:8});
 
   if (info.img) g.drawImage(info.img, options.x+2, options.y+2);
   var title = clockInfoItems[options.menuA].name;
-  var text = info.text.toString().toUpperCase();
+  var text = info.text.toString().toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (title!="Bangle") g.setFontAlign(1,0).drawString(title.toUpperCase(), options.x+options.w-2, options.y+14);
   if (g.setFont("7Seg:2").stringWidth(text)+8>options.w) g.setFont("7Seg");
   g.setFontAlign(0,0).drawString(text, options.x+options.w/2, options.y+40);
