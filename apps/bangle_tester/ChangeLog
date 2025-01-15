@@ -3,3 +3,4 @@
 0.03: Force lower poll interval to lower power usage
 0.04: reset bangle before uploading code
 0.05: Check storage and factory reset if needed
+0.06: Factory reset if bootloader is old

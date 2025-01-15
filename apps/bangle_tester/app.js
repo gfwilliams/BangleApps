@@ -12,7 +12,7 @@ function flashDevice(device) {
   })).
   then( function() {
     print('Upload code');
-    return require("ble_simple_uart").write(device, `\x10NRF.sleep();Terminal.setConsole(1);if(require("Storage").list().length<10){E.showMessage("Factory Reset...");Bangle.factoryReset(true);}require('Storage').writeJSON('welcome.json',{welcomed: false});E.showMessage("Loading Test...");Bangle.setPollInterval(800);Bangle.showTestScreen();\n`);
+    return require("ble_simple_uart").write(device, `\x10NRF.sleep();Terminal.setConsole(1);if(require("Storage").list().length<10 || ((require("Storage").readJSON("boot.info",1)||{}).version < 0.65)){E.showMessage("Factory Reset...");Bangle.factoryReset(true);}require('Storage').writeJSON('welcome.json',{welcomed: false});E.showMessage("Loading Test...");Bangle.setPollInterval(800);Bangle.showTestScreen();\n`);
   }).
   then( function() {
     print('Done!');
