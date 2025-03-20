@@ -2,7 +2,7 @@
   "name": "Jolt.js Turn Off",
   "shortName":"Jolt Off",
   "version":"0.06",
-  "description": "Finds a Jolt.js device and sends it a command to turn it off, waiting for a button press of >1 second to turn it on",
+  "description": "Finds a Jolt.js device and sends it a command to turn it off, waiting for a button press of >1 second to turn it on. On success it'll turn the Blue LED on the Jolt on for 10s",
   "icon": "app.png",
   "tags": "tool",
   "supports" : ["BANGLEJS2"],
