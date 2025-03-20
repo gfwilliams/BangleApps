@@ -1,0 +1,13 @@
+{ "id": "jolt_off",
+  "name": "Jolt.js Turn Off",
+  "shortName":"Jolt Off",
+  "version":"0.06",
+  "description": "Finds a Jolt.js device and sends it a command to turn it off, waiting for a button press of >1 second to turn it on",
+  "icon": "app.png",
+  "tags": "tool",
+  "supports" : ["BANGLEJS2"],
+  "storage": [
+    {"name":"jolt_off.app.js","url":"app.js"},
+    {"name":"jolt_off.img","url":"app-icon.js","evaluate":true}
+  ]
+}
