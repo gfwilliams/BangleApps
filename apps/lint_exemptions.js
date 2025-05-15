@@ -475,12 +475,6 @@ module.exports = {
       "no-undef"
     ]
   },
-  "apps/warpdrive/app.js": {
-    "hash": "c2f9113c4d298a3021ec4bc0bc5f5d1bcd88267b4fa2acc03ae17d6447ed7d00",
-    "rules": [
-      "no-undef"
-    ]
-  },
   "apps/usgs/settings.js": {
     "hash": "00ee672a6920f5667bfbd2988fd2853cfd579895a843ae036a00028dcb13878d",
     "rules": [
@@ -495,12 +489,6 @@ module.exports = {
   },
   "apps/timerclk/timer.alert.js": {
     "hash": "319b1e8779325199fa17136da5dc486786d9e05255ab917e8d65255405cb619f",
-    "rules": [
-      "no-undef"
-    ]
-  },
-  "apps/timecal/timecal.app.js": {
-    "hash": "9ad04daff299db71901a07d2d1d5116e273287041e9c342c3cd7a4b67db12936",
     "rules": [
       "no-undef"
     ]

@@ -14,6 +14,7 @@ const exs = require("exstats").getStats(
 const S = require("Storage");
 
 let drawTimeout: TimeoutId | undefined;
+let menuShown = false;
 
 type Dist = number & { brand: 'dist' };
 type Time = number & { brand: 'time' };
@@ -151,13 +152,11 @@ const drawSplit = (i: number, y: number, pace: number | string) =>
 
 const pauseRun = () => {
   exs.stop();
-  Bangle.setGPSPower(0, "pace")
   draw();
 };
 
 const resumeRun = () => {
   exs.resume();
-  Bangle.setGPSPower(1, "pace");
 
   g.clearRect(Bangle.appRect); // splits -> layout, clear. layout -> splits, fine
   layout.forgetLazyState();
@@ -170,6 +169,12 @@ const onButton = () => {
   else
     resumeRun();
 };
+
+const hideMenu = () => {
+  if (!menuShown) return;
+  Bangle.setUI(); // calls `remove`, which handles redrawing
+  menuShown = false;
+}
 
 exs.start(); // aka reset
 
@@ -184,10 +189,15 @@ exs.stats.dist.on("notify", (dist) => {
   let thisSplit = totalDist - prev.dist;
   let thisTime = exs.state.duration - prev.time;
 
-  while(thisSplit > 1000) {
-    splits.push({ dist: thisSplit as Dist, time: thisTime as Time });
-    thisTime = 0; // if we've jumped more than 1k, credit the time to the first split
-    thisSplit -= 1000;
+  if (thisSplit > 1000) {
+    if (thisTime > 0) {
+      // if we have splits, or time isn't ridiculous, store the split
+      // (otherwise we're initialising GPS and it's inaccurate)
+      if (splits.length || thisTime > 1000 * 60)
+        splits.push({ dist: thisSplit as Dist, time: thisTime as Time });
+    }
+
+    thisSplit %= 1000;
   }
 
   // subtract <how much we're over> off the next split notify
@@ -204,7 +214,7 @@ Bangle.on('lock', locked => {
 setWatch(() => onButton(), BTN1, { repeat: true });
 
 Bangle.on('drag', e => {
-  if (exs.state.active || e.b === 0) return;
+  if (exs.state.active || e.b === 0 || menuShown) return;
 
   splitOffsetPx -= e.dy;
   if (splitOffsetPx > 20) {
@@ -221,8 +231,37 @@ Bangle.on('twist', () => {
   Bangle.setBacklight(1);
 });
 
+Bangle.on('tap', e => {
+  // require a double tap, to avoid picking up menu "< Back" taps
+  if(exs.state.active || menuShown || !e.double) return;
+
+  menuShown = true;
+  const menu: Menu = {
+    "": {
+      remove: () => {
+        draw();
+      },
+    },
+    "< Back": () => {
+      hideMenu();
+    },
+    "Zero time": () => {
+      exs.start(); // calls reset
+      exs.stop(); // re-pauses
+      hideMenu();
+    },
+    "Clear splits": () => {
+      splits.splice(0, splits.length);
+      hideMenu();
+    },
+  };
+
+  E.showMenu(menu);
+});
+
 Bangle.loadWidgets();
 Bangle.drawWidgets();
+Bangle.setGPSPower(1, "pace");
 
 g.clearRect(Bangle.appRect);
 draw();
