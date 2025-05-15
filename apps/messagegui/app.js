@@ -13,7 +13,8 @@
 /* For example for maps:
 
 // a message
-require("messages").pushMessage({"t":"add","id":1575479849,"src":"Skype","title":"My Friend","body":"Hey! How's everything going?",positive:1,negative:1})
+require("messages").pushMessage({"t":"add","id":1575479849,"src":"Skype","title":"My Friend","body":"Hey! How's everything going? This is a really really long message that is really so super long you'll have to scroll it lots and lots",positive:1,negative:1})
+require("messages").pushMessage({"t":"add","id":23232,"src":"Skype","title":"Mr. Bobby McBobFace","body":"Boopedy-boop",positive:1,negative:1})
 // maps
 GB({t:"nav",src:"maps",title:"Navigation",instr:"High St towards Tollgate Rd",distance:"966yd",action:"continue",eta:"08:39"})
 GB({t:"nav",src:"maps",title:"Navigation",instr:"High St",distance:"12km",action:"left_slight",eta:"08:39"})
@@ -148,7 +149,7 @@ function showMapMessage(msg) {
   Bangle.setUI({mode:"updown", back: back}, back); // any input takes us back
 }
 
-let updateLabelsInterval;
+
 
 function showMusicMessage(msg) {
   active = "music";
@@ -163,6 +164,7 @@ function showMusicMessage(msg) {
   var trackName = '';
   var artistName = '';
   var albumName = '';
+  var updateLabelsInterval;
 
   function fmtTime(s) {
     var m = Math.floor(s/60);
@@ -174,7 +176,8 @@ function showMusicMessage(msg) {
     return text.substr(offset, sliceLength).padEnd(maxLen, " ");
   }
   function unload() {
-    clearInterval(updateLabelsInterval);
+    if (updateLabelsInterval)
+      clearInterval(updateLabelsInterval);
     updateLabelsInterval = undefined;
   }
   function back() {
@@ -221,7 +224,8 @@ function showMusicMessage(msg) {
       {type:"btn", pad:8, label:atob("ABISgQDAAfgAf4Af8Af/Af/gf/wf/8f/+f/+f/8f/wf/gf/Af8Af4AfgAfAAcA=="), cb:()=>Bangle.musicControl("next")}, // next
     ]}:{},
     {type:"txt", font:"6x8:2", label:msg.dur?fmtTime(msg.dur):"--:--" }
-  ]}, { back : back });
+  ]}, { back : back, remove : unload
+  });
   g.reset().clearRect(Bangle.appRect);
   layout.render();
 
@@ -234,34 +238,6 @@ function showMusicMessage(msg) {
   }, 400);
 }
 
-function showMessageScroller(msg) {
-  cancelReloadTimeout();
-  active = "scroller";
-  var bodyFont = fontBig;
-  g.setFont(bodyFont);
-  var lines = [];
-  if (msg.title) lines = g.wrapString(msg.title, g.getWidth()-10);
-  var titleCnt = lines.length;
-  if (titleCnt) lines.push(""); // add blank line after title
-  lines = lines.concat(g.wrapString(msg.body, g.getWidth()-10),["",/*LANG*/"< Back"]);
-  E.showScroller({
-    h : g.getFontHeight(), // height of each menu item in pixels
-    c : lines.length, // number of menu items
-    // a function to draw a menu item
-    draw : function(idx, r) {
-      // FIXME: in 2v13 onwards, clearRect(r) will work fine. There's a bug in 2v12
-      g.setBgColor(idx<titleCnt ? g.theme.bg2 : g.theme.bg).
-        setColor(idx<titleCnt ? g.theme.fg2 : g.theme.fg).
-        clearRect(r.x,r.y,r.x+r.w, r.y+r.h);
-      g.setFont(bodyFont).setFontAlign(0,-1).drawString(lines[idx], r.x+r.w/2, r.y);
-    }, select : function(idx) {
-      if (idx>=lines.length-2)
-        showMessage(msg.id, true);
-    },
-    back : () => showMessage(msg.id, true)
-  });
-}
-
 function showMessageSettings(msg) {
   active = "settings";
   var menu = {"":{
@@ -269,9 +245,6 @@ function showMessageSettings(msg) {
       back:() => showMessage(msg.id, true)
     },
   };
-
-  if (msg.id!="music")
-    menu[/*LANG*/"View Message"] = () => showMessageScroller(msg);
 
   if (msg.reply && reply) {
     menu[/*LANG*/"Reply"] = () => {
@@ -333,10 +306,6 @@ function showMessage(msgid, persist) {
   if(!persist) resetReloadTimeout();
   let idx = MESSAGES.findIndex(m=>m.id==msgid);
   var msg = MESSAGES[idx];
-  if (updateLabelsInterval) {
-    clearInterval(updateLabelsInterval);
-    updateLabelsInterval=undefined;
-  }
   if (!msg) return returnToClockIfEmpty(); // go home if no message found
   if (msg.id=="music") {
     cancelReloadTimeout(); // don't auto-reload to clock now
@@ -375,30 +344,31 @@ function showMessage(msgid, persist) {
         bodyFont = fontMedium;
       }
     }
-    // Now crop, given whatever font we have available
     lines = g.setFont(bodyFont).wrapString(body, w);
-    var maxLines = Math.floor(h / g.getFontHeight());
-    if (lines.length>maxLines) // if too long, wrap with a bit less spae so we have room for '...'
-      body = g.setFont(bodyFont).wrapString(body, w-10).slice(0,maxLines).join("\n")+"...";
-    else
-      body = lines.join("\n");
+    if (lines.length<3)
+      lines.unshift(""); // if less lines, pad them out a bit at the top!
   }
   function goBack() {
-    layout = undefined;
     msg.new = false; // read mail
     cancelReloadTimeout(); // don't auto-reload to clock now
     returnToClockIfEmpty();
   }
-  var negHandler,posHandler,footer = [ ];
+  var negHandler,posHandler;
+  Bangle.setUI(); // force last UI to be removed (will call require("widget_utils").show(); if last displaying a message)
+  require("widget_utils").hide();
   if (msg.negative) {
     negHandler = ()=>{
       msg.new = false;
       cancelReloadTimeout(); // don't auto-reload to clock now
       Bangle.messageResponse(msg,false);
       returnToCheckMessages();
-    }; footer.push({type:"img",src:atob("PhAB4A8AAAAAAAPAfAMAAAAAD4PwHAAAAAA/H4DwAAAAAH78B8AAAAAA/+A/AAAAAAH/Af//////w/gP//////8P4D///////H/Af//////z/4D8AAAAAB+/AfAAAAAA/H4DwAAAAAPg/AcAAAAADwHwDAAAAAA4A8AAAAAAAA=="),col:"#f00",cb:negHandler});
+    };
+    WIDGETS.msgleft = { area:"bl", width:62,
+      draw : function() {
+        g.reset().setColor("#f00").drawImage(atob("PhAB4A8AAAAAAAPAfAMAAAAAD4PwHAAAAAA/H4DwAAAAAH78B8AAAAAA/+A/AAAAAAH/Af//////w/gP//////8P4D///////H/Af//////z/4D8AAAAAB+/AfAAAAAA/H4DwAAAAAPg/AcAAAAADwHwDAAAAAA4A8AAAAAAAA=="),this.x,this.y+8);
+      }
+    };
   }
-  footer.push({fillx:1}); // push images to left/right
   if (msg.reply && reply) {
     posHandler = ()=>{
       replying = true;
@@ -416,7 +386,12 @@ function showMessage(msgid, persist) {
           layout.render();
           showMessage(msg.id);
         });
-    }; footer.push({type:"img",src:atob("QRABAAAAAAAH//+AAAAABgP//8AAAAADgf//4AAAAAHg4ABwAAAAAPh8APgAAAAAfj+B////////geHv///////hf+f///////GPw///////8cGBwAAAAAPx/gDgAAAAAfD/gHAAAAAA8DngOAAAAABwDHP8AAAAADACGf4AAAAAAAAM/w=="),col:"#0f0", cb:posHandler});
+    };
+    WIDGETS.msgright = { area:"br", width:62,
+      draw : function() {
+        g.reset().setColor("#0f0").drawImage(atob("QRABAAAAAAAH//+AAAAABgP//8AAAAADgf//4AAAAAHg4ABwAAAAAPh8APgAAAAAfj+B////////geHv///////hf+f///////GPw///////8cGBwAAAAAPx/gDgAAAAAfD/gHAAAAAA8DngOAAAAABwDHP8AAAAADACGf4AAAAAAAAM/w=="),this.x,this.y+8);
+      }
+    };
   }
   else if (msg.positive) {
     posHandler = ()=>{
@@ -424,40 +399,72 @@ function showMessage(msgid, persist) {
       cancelReloadTimeout(); // don't auto-reload to clock now
       Bangle.messageResponse(msg,true);
       returnToCheckMessages();
-    }; footer.push({type:"img",src:atob("QRABAAAAAAAAAAOAAAAABgAAA8AAAAADgAAD4AAAAAHgAAPgAAAAAPgAA+AAAAAAfgAD4///////gAPh///////gA+D///////AD4H//////8cPgAAAAAAPw8+AAAAAAAfB/4AAAAAAA8B/gAAAAAABwB+AAAAAAADAB4AAAAAAAAABgAA=="),col:"#0f0",cb:posHandler});
-  }
+    };
+    WIDGETS.msgright = { area:"br", width:62,
+      draw : function() {
+        g.reset().setColor("#0f0").drawImage(atob("QRABAAAAAAAAAAOAAAAABgAAA8AAAAADgAAD4AAAAAHgAAPgAAAAAPgAA+AAAAAAfgAD4///////gAPh///////gA+D///////AD4H//////8cPgAAAAAAPw8+AAAAAAAfB/4AAAAAAA8B/gAAAAAABwB+AAAAAAADAB4AAAAAAAAABgAA=="),this.x,this.y+8);
+      }
+    };
+  };
+  if (WIDGETS.msgleft || WIDGETS.msgright)
+    Bangle.drawWidgets();
+  let msgIcon = require("messageicons").getImage(msg);
+  let msgCol = require("messageicons").getColor(msg, {settings, default:g.theme.fg2});
+  scroller = E.showScroller({
+    h : 50, // height of each menu item in pixels
+    c : (lines.length+3)>>1, // number of menu items
+    // a function to draw a menu item
+    draw : function(idx, r) {
+      if (idx) {
+        g.setBgColor(g.theme.bg).setColor(g.theme.fg).clearRect(r.x,r.y,r.x+r.w, r.y+r.h);
+        g.setFont(bodyFont).setFontAlign(0,-1);
+        g.drawString(lines[idx*2-2]||"", r.x+r.w/2, r.y).drawString(lines[idx*2-1]||"", r.x+r.w/2, r.y+25);
+      } else { // idx==0 => header
+        g.setBgColor(g.theme.bg2).setColor(g.theme.fg).clearRect(r.x,r.y,r.x+r.w, r.y+r.h);
+        var mid = (r.w-50)/2;
+        g.setColor(g.theme.fg2).setFont(fontSmall).setFontAlign(0,-1).drawString(msg.src||/*LANG*/"Message", mid, r.y+2);
+        g.setFont(titleFont).setFontAlign(0,0).drawString(title, mid, r.y+35);
+        //g.setColor(g.theme.bgH).fillRect({x:r.x+r.w-47, y:r.y+3, w:44, h:44, r:6});
+        g.setColor(msgCol).drawImage(msgIcon, r.x+r.w-25, r.y + 25, {scale:1.5,rotate:0});
+      }
+    }, select : function(idx) {
+      if (idx==0) { // the title
+        cancelReloadTimeout(); // don't auto-reload to clock now
+        showMessageSettings(msg);
+      }
+    },
+    remove : function() {
+      Bangle.removeListener("drag", dragHandler);
+      Bangle.removeListener("swipe", swipeHandler);
+      delete WIDGETS.msgleft;
+      delete WIDGETS.msgright;
+      require("widget_utils").show();
+    },
+    back : () => {
+      goBack();
+    }
+  });
 
-  layout = new Layout({ type:"v", c: [
-    {type:"h", fillx:1, bgCol:g.theme.bg2, col: g.theme.fg2,  c: [
-      { type:"v", fillx:1, c: [
-        {type:"txt", font:fontSmall, label:msg.src||/*LANG*/"Message", bgCol:g.theme.bg2, col: g.theme.fg2, fillx:1, pad:2, halign:1 },
-        title?{type:"txt", font:titleFont, label:title, bgCol:g.theme.bg2, col: g.theme.fg2, fillx:1, pad:2 }:{},
-      ]},
-      { type:"btn",
-        src:require("messageicons").getImage(msg),
-        col:require("messageicons").getColor(msg, {settings, default:g.theme.fg2}),
-        pad: 3, cb:()=>{
-          cancelReloadTimeout(); // don't auto-reload to clock now
-          showMessageSettings(msg);
-        }
-      },
-    ]},
-    {type:"txt", font:bodyFont, label:body, fillx:1, filly:1, pad:2, cb:()=>{
-      // allow tapping to show a larger version
-      showMessageScroller(msg);
-    } },
-    {type:"h",fillx:1, c: footer}
-  ]},{back:goBack});
-
-  Bangle.swipeHandler = (lr,ud) => {
+  // save the scroll pos when finger pressed
+  let lastTouched=false, lastScrollPos=0;
+  let dragHandler = (e) => {
+    if (e.b && !lastTouched)
+      lastScrollPos = scroller.scroll;
+    lastTouched = e.b;
+  };
+  Bangle.on("drag", dragHandler);
+  // handle swipes
+  let swipeHandler = (lr,ud) => {
+    // left/right accept/reject
     if (lr>0 && posHandler) posHandler();
     if (lr<0 && negHandler) negHandler();
-    if (ud>0 && idx<MESSAGES.length-1) showMessage(MESSAGES[idx+1].id, true);
-    if (ud<0 && idx>0) showMessage(MESSAGES[idx-1].id, true);
+    // up down to prev/next but ONLY if we're already at the top/bottom => scroller hasn't moved
+    if (scroller.scroll==lastScrollPos) {
+      if (ud>0 && idx<MESSAGES.length-1) showMessage(MESSAGES[idx+1].id, true);
+      if (ud<0 && idx>0) showMessage(MESSAGES[idx-1].id, true);
+    }
   };
-  Bangle.on("swipe", Bangle.swipeHandler);
-  g.reset().clearRect(Bangle.appRect);
-  layout.render();
+  Bangle.on("swipe", swipeHandler);
 }
 
 
