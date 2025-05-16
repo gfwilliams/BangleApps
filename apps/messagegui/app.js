@@ -15,6 +15,8 @@
 // a message
 require("messages").pushMessage({"t":"add","id":1575479849,"src":"Skype","title":"My Friend","body":"Hey! How's everything going? This is a really really long message that is really so super long you'll have to scroll it lots and lots",positive:1,negative:1})
 require("messages").pushMessage({"t":"add","id":23232,"src":"Skype","title":"Mr. Bobby McBobFace","body":"Boopedy-boop",positive:1,negative:1})
+require("messages").pushMessage({"t":"add","id":23233,"src":"Skype","title":"Thyttan test","body":"Nummerplåtsbelysning trodo",positive:1,negative:1})
+require("messages").pushMessage({"t":"add","id":23234,"src":"Skype","title":"Thyttan test 2","body":"Nummerplåtsbelysning trodo Nummerplåtsbelysning trodo Nummerplåtsbelysning trodo Nummerplåtsbelysning trodo Nummerplåtsbelysning trodo Nummerplåtsbelysning trodo",positive:1,negative:1})
 // maps
 GB({t:"nav",src:"maps",title:"Navigation",instr:"High St towards Tollgate Rd",distance:"966yd",action:"continue",eta:"08:39"})
 GB({t:"nav",src:"maps",title:"Navigation",instr:"High St",distance:"12km",action:"left_slight",eta:"08:39"})
@@ -130,9 +132,9 @@ function showMapMessage(msg) {
     street?{type:"h", bgCol:g.theme.bg2, col: g.theme.fg2,  fillx:1, c: [
       {type:"txt", font:fontSmall, label:"Towards" },
       {type:"txt", font:fontLarge, label:street }
-    ]}:{},
+    ]}:{type:""},
     {type:"h",fillx:1, filly:1, c: [
-      img?{type:"img",src:atob(img), scale:2, pad:6}:{},
+      img?{type:"img",src:atob(img), scale:2, pad:6}:{type:""},
       {type:"v", fillx:1, c: [
         {type:"txt", font:fontVLarge, label:distance||"" }
       ]},
@@ -246,7 +248,12 @@ function showMessageSettings(msg) {
     },
   };
 
-  if (msg.reply && reply) {
+  /* Bangle.js 1 can't press a button to go back from
+  showMessage to the message list, so add the option here */
+  if (process.env.BOARD=="BANGLEJS")
+    menu[/*LANG*/"Message List"] = () => { returnToMain(); };
+
+  if (msg.reply && reply)
     menu[/*LANG*/"Reply"] = () => {
       replying = true;
       reply.reply({msg: msg})
@@ -260,14 +267,11 @@ function showMessageSettings(msg) {
           showMessage(msg.id);
         });
     };
-  }
 
-  menu = Object.assign(menu, {
-    /*LANG*/"Delete" : () => {
-      MESSAGES = MESSAGES.filter(m=>m.id!=msg.id);
-      returnToMain();
-    },
-  });
+  menu[/*LANG*/"Delete"] = () => {
+    MESSAGES = MESSAGES.filter(m=>m.id!=msg.id);
+    returnToMain();
+  };
 
   if (Bangle.messageIgnore && msg.src)
     menu[/*LANG*/"Ignore"] = () => {
@@ -305,7 +309,7 @@ function showMessage(msgid, persist) {
   if (replying) { return; }
   if(!persist) resetReloadTimeout();
   let idx = MESSAGES.findIndex(m=>m.id==msgid);
-  var msg = MESSAGES[idx];
+  let msg = MESSAGES[idx];
   if (!msg) return returnToClockIfEmpty(); // go home if no message found
   if (msg.id=="music") {
     cancelReloadTimeout(); // don't auto-reload to clock now
@@ -317,15 +321,18 @@ function showMessage(msgid, persist) {
   }
   active = "message";
   // Normal text message display
-  var title=msg.title, titleFont = fontLarge, lines;
-  var body=msg.body, bodyFont = fontLarge;
+  let src=msg.src||/*LANG*/"Message", srcFont = fontSmall;
+  let title=msg.title, titleFont = fontLarge, lines;
+  let body=msg.body, bodyFont = fontLarge;
   // If no body, use the title text instead...
   if (body===undefined) {
     body = title;
     title = undefined;
   }
+  if (g.setFont(srcFont).stringWidth(src) > g.getWidth()-52)
+    srcFont = "4x6";
   if (title) {
-    var w = g.getWidth()-48;
+    let w = g.getWidth()-52;
     if (g.setFont(titleFont).stringWidth(title) > w) {
       titleFont = fontBig;
       if (settings.fontSize!=1 && g.setFont(titleFont).stringWidth(title) > w)
@@ -337,7 +344,7 @@ function showMessage(msgid, persist) {
     }
   }
   if (body) { // Try and find a font that fits...
-    var w = g.getWidth()-2, h = Bangle.appRect.h-60;
+    let w = g.getWidth()-2, h = Bangle.appRect.h-60;
     if (g.setFont(bodyFont).wrapString(body, w).length*g.getFontHeight() > h) {
       bodyFont = fontBig;
       if (settings.fontSize!=1 && g.setFont(bodyFont).wrapString(body, w).length*g.getFontHeight() > h) {
@@ -353,9 +360,7 @@ function showMessage(msgid, persist) {
     cancelReloadTimeout(); // don't auto-reload to clock now
     returnToClockIfEmpty();
   }
-  var negHandler,posHandler;
-  Bangle.setUI(); // force last UI to be removed (will call require("widget_utils").show(); if last displaying a message)
-  require("widget_utils").hide();
+  let negHandler,posHandler,rowLeftDraw,rowRightDraw;
   if (msg.negative) {
     negHandler = ()=>{
       msg.new = false;
@@ -363,11 +368,7 @@ function showMessage(msgid, persist) {
       Bangle.messageResponse(msg,false);
       returnToCheckMessages();
     };
-    WIDGETS.msgleft = { area:"bl", width:62,
-      draw : function() {
-        g.reset().setColor("#f00").drawImage(atob("PhAB4A8AAAAAAAPAfAMAAAAAD4PwHAAAAAA/H4DwAAAAAH78B8AAAAAA/+A/AAAAAAH/Af//////w/gP//////8P4D///////H/Af//////z/4D8AAAAAB+/AfAAAAAA/H4DwAAAAAPg/AcAAAAADwHwDAAAAAA4A8AAAAAAAA=="),this.x,this.y+8);
-      }
-    };
+    rowLeftDraw = function(r) {g.setColor("#f00").drawImage(atob("PhAB4A8AAAAAAAPAfAMAAAAAD4PwHAAAAAA/H4DwAAAAAH78B8AAAAAA/+A/AAAAAAH/Af//////w/gP//////8P4D///////H/Af//////z/4D8AAAAAB+/AfAAAAAA/H4DwAAAAAPg/AcAAAAADwHwDAAAAAA4A8AAAAAAAA=="),r.x,r.y);};
   }
   if (msg.reply && reply) {
     posHandler = ()=>{
@@ -378,54 +379,49 @@ function showMessage(msgid, persist) {
         .then(result => {
           Bluetooth.println(JSON.stringify(result));
           replying = false;
-          layout.render();
           returnToCheckMessages();
         })
         .catch(() => {
           replying = false;
-          layout.render();
           showMessage(msg.id);
         });
     };
-    WIDGETS.msgright = { area:"br", width:62,
-      draw : function() {
-        g.reset().setColor("#0f0").drawImage(atob("QRABAAAAAAAH//+AAAAABgP//8AAAAADgf//4AAAAAHg4ABwAAAAAPh8APgAAAAAfj+B////////geHv///////hf+f///////GPw///////8cGBwAAAAAPx/gDgAAAAAfD/gHAAAAAA8DngOAAAAABwDHP8AAAAADACGf4AAAAAAAAM/w=="),this.x,this.y+8);
-      }
-    };
-  }
-  else if (msg.positive) {
+    rowRightDraw = function(r) {g.setColor("#0f0").drawImage(atob("QRABAAAAAAAH//+AAAAABgP//8AAAAADgf//4AAAAAHg4ABwAAAAAPh8APgAAAAAfj+B////////geHv///////hf+f///////GPw///////8cGBwAAAAAPx/gDgAAAAAfD/gHAAAAAA8DngOAAAAABwDHP8AAAAADACGf4AAAAAAAAM/w=="),r.x+r.w-62,r.y);};
+  } else if (msg.positive) {
     posHandler = ()=>{
       msg.new = false;
       cancelReloadTimeout(); // don't auto-reload to clock now
       Bangle.messageResponse(msg,true);
       returnToCheckMessages();
     };
-    WIDGETS.msgright = { area:"br", width:62,
-      draw : function() {
-        g.reset().setColor("#0f0").drawImage(atob("QRABAAAAAAAAAAOAAAAABgAAA8AAAAADgAAD4AAAAAHgAAPgAAAAAPgAA+AAAAAAfgAD4///////gAPh///////gA+D///////AD4H//////8cPgAAAAAAPw8+AAAAAAAfB/4AAAAAAA8B/gAAAAAABwB+AAAAAAADAB4AAAAAAAAABgAA=="),this.x,this.y+8);
-      }
-    };
-  };
-  if (WIDGETS.msgleft || WIDGETS.msgright)
-    Bangle.drawWidgets();
+    rowRightDraw = function(r) {g.setColor("#0f0").drawImage(atob("QRABAAAAAAAAAAOAAAAABgAAA8AAAAADgAAD4AAAAAHgAAPgAAAAAPgAA+AAAAAAfgAD4///////gAPh///////gA+D///////AD4H//////8cPgAAAAAAPw8+AAAAAAAfB/4AAAAAAA8B/gAAAAAABwB+AAAAAAADAB4AAAAAAAAABgAA=="),r.x+r.w-62,r.y);};
+  }
+  let textLineOffset = (rowLeftDraw||rowRightDraw)?-3:-2;
+  let fontHeight = g.setFont(bodyFont).getFontHeight();
+  let rowHeight = (fontHeight>25)?fontHeight:25;
   let msgIcon = require("messageicons").getImage(msg);
   let msgCol = require("messageicons").getColor(msg, {settings, default:g.theme.fg2});
-  scroller = E.showScroller({
-    h : 50, // height of each menu item in pixels
-    c : (lines.length+3)>>1, // number of menu items
+  Bangle.setUI(); // force last UI to be removed (will call require("widget_utils").show(); if last displaying a message)
+  require("widget_utils").hide();
+  let scroller = E.showScroller({
+    h : rowHeight*2, // height of each menu item in pixels
+    c : (lines.length+1-textLineOffset)>>1, // number of menu items
     // a function to draw a menu item
-    draw : function(idx, r) {
+    draw : function(idx, r) { "ram";
       if (idx) {
         g.setBgColor(g.theme.bg).setColor(g.theme.fg).clearRect(r.x,r.y,r.x+r.w, r.y+r.h);
         g.setFont(bodyFont).setFontAlign(0,-1);
-        g.drawString(lines[idx*2-2]||"", r.x+r.w/2, r.y).drawString(lines[idx*2-1]||"", r.x+r.w/2, r.y+25);
+        g.drawString(lines[idx*2+textLineOffset]||"", r.x+r.w/2, r.y).drawString(lines[idx*2+textLineOffset+1]||"", r.x+r.w/2, r.y+rowHeight);
+        if (idx!=1) return;
+        if (rowLeftDraw) rowLeftDraw(r);
+        if (rowRightDraw) rowRightDraw(r);
       } else { // idx==0 => header
         g.setBgColor(g.theme.bg2).setColor(g.theme.fg).clearRect(r.x,r.y,r.x+r.w, r.y+r.h);
-        var mid = (r.w-50)/2;
-        g.setColor(g.theme.fg2).setFont(fontSmall).setFontAlign(0,-1).drawString(msg.src||/*LANG*/"Message", mid, r.y+2);
+        var mid = (r.w-rowHeight*2)/2;
+        g.setColor(g.theme.fg2).setFont(srcFont).setFontAlign(0,-1).drawString(src, mid, r.y+2);
         g.setFont(titleFont).setFontAlign(0,0).drawString(title, mid, r.y+35);
         //g.setColor(g.theme.bgH).fillRect({x:r.x+r.w-47, y:r.y+3, w:44, h:44, r:6});
-        g.setColor(msgCol).drawImage(msgIcon, r.x+r.w-25, r.y + 25, {scale:1.5,rotate:0});
+        g.setColor(msgCol).drawImage(msgIcon, r.x+r.w-25, r.y + 25, {scale:(rowHeight<25)?1:1.5,rotate:0});
       }
     }, select : function(idx) {
       if (idx==0) { // the title
@@ -436,8 +432,6 @@ function showMessage(msgid, persist) {
     remove : function() {
       Bangle.removeListener("drag", dragHandler);
       Bangle.removeListener("swipe", swipeHandler);
-      delete WIDGETS.msgleft;
-      delete WIDGETS.msgright;
       require("widget_utils").show();
     },
     back : () => {
@@ -446,23 +440,41 @@ function showMessage(msgid, persist) {
   });
 
   // save the scroll pos when finger pressed
-  let lastTouched=false, lastScrollPos=0;
+  let lastTouched=false, lastScrollPos=0, scrollY=0;
   let dragHandler = (e) => {
-    if (e.b && !lastTouched)
-      lastScrollPos = scroller.scroll;
+    if (e.b) {
+      if (!lastTouched) lastScrollPos = scroller.scroll;
+      scrollY += e.dy;
+    }
     lastTouched = e.b;
+    // swipe up down to prev/next but ONLY when finger released and if we're already at the top/bottom => scroller hasn't moved
+    if (!e.b && scroller.scroll==lastScrollPos) {
+      if (scrollY<-50 && idx<MESSAGES.length-1) {
+        Bangle.buzz(30);
+        showMessage(MESSAGES[idx+1].id, true);
+      }
+      if (scrollY>50 && idx>0) {
+        Bangle.buzz(30);
+        showMessage(MESSAGES[idx-1].id, true);
+      }
+      scrollY = 0;
+    }
   };
   Bangle.on("drag", dragHandler);
   // handle swipes
   let swipeHandler = (lr,ud) => {
     // left/right accept/reject
-    if (lr>0 && posHandler) posHandler();
-    if (lr<0 && negHandler) negHandler();
-    // up down to prev/next but ONLY if we're already at the top/bottom => scroller hasn't moved
-    if (scroller.scroll==lastScrollPos) {
-      if (ud>0 && idx<MESSAGES.length-1) showMessage(MESSAGES[idx+1].id, true);
-      if (ud<0 && idx>0) showMessage(MESSAGES[idx-1].id, true);
+    if (lr>0 && posHandler) {
+      Bangle.buzz(30);
+      posHandler();
     }
+    if (lr<0 && negHandler) {
+      Bangle.buzz(30);
+      negHandler();
+    }
+    /* handle up/down in drag handler because we want to
+    move message only when the finger is released, or subsequent
+    finger movement will end up dragging the new message */
   };
   Bangle.on("swipe", swipeHandler);
 }
