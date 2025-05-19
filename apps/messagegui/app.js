@@ -90,6 +90,35 @@ function saveMessages() {
 }
 E.on("kill", saveMessages);
 
+/* Listens to drag events to allow the user to swipe up/down to change message on Bangle.js 2
+returns dragHandler which should then be removed with Bangle.removeListener("drah", dragHandler); on exit */
+function addDragHandlerToChangeMessage(idx, scroller) {
+  // save the scroll pos when finger pressed
+  let lastTouched=false, lastScrollPos=0, scrollY=0;
+  let dragHandler = (e) => {
+    let scrollPos = scroller?scroller.scroll:0;
+    if (e.b) {
+      if (!lastTouched) lastScrollPos = scrollPos;
+      scrollY += e.dy;
+    }
+    lastTouched = e.b;
+    // swipe up down to prev/next but ONLY when finger released and if we're already at the top/bottom => scroller hasn't moved
+    if (!e.b && scrollPos==lastScrollPos) {
+      if (scrollY<-50 && idx<MESSAGES.length-1) {
+        Bangle.buzz(30);
+        showMessage(MESSAGES[idx+1].id, true);
+      }
+      if (scrollY>50 && idx>0) {
+        Bangle.buzz(30);
+        showMessage(MESSAGES[idx-1].id, true);
+      }
+      scrollY = 0;
+    }
+  };
+  Bangle.on("drag", dragHandler);
+  return dragHandler;
+}
+
 function showMapMessage(msg) {
   active = "map";
   require("messages").stopBuzz(); // stop repeated buzzing while the map is showing
@@ -140,15 +169,17 @@ function showMapMessage(msg) {
       ]},
     ]},
     {type:"txt", font:fontMedium, label:msg.eta?`ETA ${msg.eta}`:"" }
-  ]});
-  g.reset().clearRect(Bangle.appRect);
-  layout.render();
-  function back() { // mark as not new and return to menu
+  ]}, { back : function() { // mark as not new and return to menu
     msg.new = false;
     layout = undefined;
     checkMessages({clockIfNoMsg:1,clockIfAllRead:1,ignoreUnread:settings.ignoreUnread,openMusic:0});
-  }
-  Bangle.setUI({mode:"updown", back: back}, back); // any input takes us back
+  }, remove : function() {
+    Bangle.removeListener("drag", dragHandler);
+  }});
+  g.reset().clearRect(Bangle.appRect);
+  layout.render();
+  // handle up/down to drag to new message
+  let dragHandler = addDragHandlerToChangeMessage(MESSAGES.findIndex(m=>m==msg));
 }
 
 
@@ -181,6 +212,7 @@ function showMusicMessage(msg) {
     if (updateLabelsInterval)
       clearInterval(updateLabelsInterval);
     updateLabelsInterval = undefined;
+    Bangle.removeListener("drag", dragHandler);
   }
   function back() {
     unload();
@@ -230,6 +262,9 @@ function showMusicMessage(msg) {
   });
   g.reset().clearRect(Bangle.appRect);
   layout.render();
+
+  // handle up/down to drag to new message
+  let dragHandler = addDragHandlerToChangeMessage(MESSAGES.findIndex(m=>m==msg));
 
   updateLabelsInterval = setInterval(function() {
     updateLabels();
@@ -355,11 +390,6 @@ function showMessage(msgid, persist) {
     if (lines.length<3)
       lines.unshift(""); // if less lines, pad them out a bit at the top!
   }
-  function goBack() {
-    msg.new = false; // read mail
-    cancelReloadTimeout(); // don't auto-reload to clock now
-    returnToClockIfEmpty();
-  }
   let negHandler,posHandler,rowLeftDraw,rowRightDraw;
   if (msg.negative) {
     negHandler = ()=>{
@@ -396,32 +426,41 @@ function showMessage(msgid, persist) {
     };
     rowRightDraw = function(r) {g.setColor("#0f0").drawImage(atob("QRABAAAAAAAAAAOAAAAABgAAA8AAAAADgAAD4AAAAAHgAAPgAAAAAPgAA+AAAAAAfgAD4///////gAPh///////gA+D///////AD4H//////8cPgAAAAAAPw8+AAAAAAAfB/4AAAAAAA8B/gAAAAAABwB+AAAAAAADAB4AAAAAAAAABgAA=="),r.x+r.w-62,r.y);};
   }
-  let textLineOffset = (rowLeftDraw||rowRightDraw)?-3:-2;
   let fontHeight = g.setFont(bodyFont).getFontHeight();
-  let rowHeight = (fontHeight>25)?fontHeight:25;
+  let lineHeight = (fontHeight>25)?fontHeight:25;
+  let linesPerRow = 2;
+  if (fontHeight<17) {
+    lineHeight = 16;
+    linesPerRow = 3;
+  }
+  let rowHeight = lineHeight*linesPerRow;
+  let textLineOffset = -(linesPerRow + ((rowLeftDraw||rowRightDraw)?1:0));
   let msgIcon = require("messageicons").getImage(msg);
   let msgCol = require("messageicons").getColor(msg, {settings, default:g.theme.fg2});
   Bangle.setUI(); // force last UI to be removed (will call require("widget_utils").show(); if last displaying a message)
-  require("widget_utils").hide();
+  if (!settings.showWidgets) require("widget_utils").hide();
   let scroller = E.showScroller({
-    h : rowHeight*2, // height of each menu item in pixels
-    c : (lines.length+1-textLineOffset)>>1, // number of menu items
+    h : rowHeight, // height of each menu item in pixels
+    c : Math.ceil((lines.length-textLineOffset) / linesPerRow), // number of menu items
     // a function to draw a menu item
     draw : function(idx, r) { "ram";
       if (idx) {
+        let lidx = idx*linesPerRow+textLineOffset;
         g.setBgColor(g.theme.bg).setColor(g.theme.fg).clearRect(r.x,r.y,r.x+r.w, r.y+r.h);
         g.setFont(bodyFont).setFontAlign(0,-1);
-        g.drawString(lines[idx*2+textLineOffset]||"", r.x+r.w/2, r.y).drawString(lines[idx*2+textLineOffset+1]||"", r.x+r.w/2, r.y+rowHeight);
+        g.drawString(lines[lidx++]||"", r.x+r.w/2, r.y).drawString(lines[lidx++]||"", r.x+r.w/2, r.y+lineHeight);
+        if (linesPerRow==3) g.drawString(lines[lidx++]||"", r.x+r.w/2, r.y+lineHeight*2);
         if (idx!=1) return;
         if (rowLeftDraw) rowLeftDraw(r);
         if (rowRightDraw) rowRightDraw(r);
       } else { // idx==0 => header
         g.setBgColor(g.theme.bg2).setColor(g.theme.fg).clearRect(r.x,r.y,r.x+r.w, r.y+r.h);
-        var mid = (r.w-rowHeight*2)/2;
+        var mid = (r.w-48)/2;
         g.setColor(g.theme.fg2).setFont(srcFont).setFontAlign(0,-1).drawString(src, mid, r.y+2);
-        g.setFont(titleFont).setFontAlign(0,0).drawString(title, mid, r.y+35);
+        let srcHeight = g.getFontHeight();
+        g.setFont(titleFont).setFontAlign(0,0).drawString(title, mid, r.y+ (r.h+srcHeight)/2);
         //g.setColor(g.theme.bgH).fillRect({x:r.x+r.w-47, y:r.y+3, w:44, h:44, r:6});
-        g.setColor(msgCol).drawImage(msgIcon, r.x+r.w-25, r.y + 25, {scale:(rowHeight<25)?1:1.5,rotate:0});
+        g.setColor(msgCol).drawImage(msgIcon, r.x+r.w-24, r.y + rowHeight/2, {rotate:0/*center*/});
       }
     }, select : function(idx) {
       if (idx==0) { // the title
@@ -432,35 +471,16 @@ function showMessage(msgid, persist) {
     remove : function() {
       Bangle.removeListener("drag", dragHandler);
       Bangle.removeListener("swipe", swipeHandler);
-      require("widget_utils").show();
+      if (!settings.showWidgets) require("widget_utils").show();
     },
-    back : () => {
-      goBack();
+    back : function() {
+      msg.new = false; // read mail
+      cancelReloadTimeout(); // don't auto-reload to clock now
+      returnToClockIfEmpty();
     }
   });
 
-  // save the scroll pos when finger pressed
-  let lastTouched=false, lastScrollPos=0, scrollY=0;
-  let dragHandler = (e) => {
-    if (e.b) {
-      if (!lastTouched) lastScrollPos = scroller.scroll;
-      scrollY += e.dy;
-    }
-    lastTouched = e.b;
-    // swipe up down to prev/next but ONLY when finger released and if we're already at the top/bottom => scroller hasn't moved
-    if (!e.b && scroller.scroll==lastScrollPos) {
-      if (scrollY<-50 && idx<MESSAGES.length-1) {
-        Bangle.buzz(30);
-        showMessage(MESSAGES[idx+1].id, true);
-      }
-      if (scrollY>50 && idx>0) {
-        Bangle.buzz(30);
-        showMessage(MESSAGES[idx-1].id, true);
-      }
-      scrollY = 0;
-    }
-  };
-  Bangle.on("drag", dragHandler);
+  let dragHandler = addDragHandlerToChangeMessage(idx, scroller);
   // handle swipes
   let swipeHandler = (lr,ud) => {
     // left/right accept/reject
