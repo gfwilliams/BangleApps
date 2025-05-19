@@ -13,6 +13,7 @@
 /* For example for maps:
 
 // a message
+require("messages").pushMessage({"t":"add","id":1575479849,"src":"WhatsApp","title":"My Friend","body":"Hey! How's everything going?",reply:1,negative:1})
 require("messages").pushMessage({"t":"add","id":1575479849,"src":"Skype","title":"My Friend","body":"Hey! How's everything going? This is a really really long message that is really so super long you'll have to scroll it lots and lots",positive:1,negative:1})
 require("messages").pushMessage({"t":"add","id":23232,"src":"Skype","title":"Mr. Bobby McBobFace","body":"Boopedy-boop",positive:1,negative:1})
 require("messages").pushMessage({"t":"add","id":23233,"src":"Skype","title":"Thyttan test","body":"Nummerplåtsbelysning trodo",positive:1,negative:1})
@@ -398,7 +399,7 @@ function showMessage(msgid, persist) {
       Bangle.messageResponse(msg,false);
       returnToCheckMessages();
     };
-    rowLeftDraw = function(r) {g.setColor("#f00").drawImage(atob("PhAB4A8AAAAAAAPAfAMAAAAAD4PwHAAAAAA/H4DwAAAAAH78B8AAAAAA/+A/AAAAAAH/Af//////w/gP//////8P4D///////H/Af//////z/4D8AAAAAB+/AfAAAAAA/H4DwAAAAAPg/AcAAAAADwHwDAAAAAA4A8AAAAAAAA=="),r.x,r.y);};
+    rowLeftDraw = function(r) {g.setColor("#f00").drawImage(atob("PhAB4A8AAAAAAAPAfAMAAAAAD4PwHAAAAAA/H4DwAAAAAH78B8AAAAAA/+A/AAAAAAH/Af//////w/gP//////8P4D///////H/Af//////z/4D8AAAAAB+/AfAAAAAA/H4DwAAAAAPg/AcAAAAADwHwDAAAAAA4A8AAAAAAAA=="),r.x+2,r.y+2);};
   }
   if (msg.reply && reply) {
     posHandler = ()=>{
@@ -416,7 +417,7 @@ function showMessage(msgid, persist) {
           showMessage(msg.id);
         });
     };
-    rowRightDraw = function(r) {g.setColor("#0f0").drawImage(atob("QRABAAAAAAAH//+AAAAABgP//8AAAAADgf//4AAAAAHg4ABwAAAAAPh8APgAAAAAfj+B////////geHv///////hf+f///////GPw///////8cGBwAAAAAPx/gDgAAAAAfD/gHAAAAAA8DngOAAAAABwDHP8AAAAADACGf4AAAAAAAAM/w=="),r.x+r.w-62,r.y);};
+    rowRightDraw = function(r) {g.setColor("#0f0").drawImage(atob("QRABAAAAAAAH//+AAAAABgP//8AAAAADgf//4AAAAAHg4ABwAAAAAPh8APgAAAAAfj+B////////geHv///////hf+f///////GPw///////8cGBwAAAAAPx/gDgAAAAAfD/gHAAAAAA8DngOAAAAABwDHP8AAAAADACGf4AAAAAAAAM/w=="),r.x+r.w-64,r.y+2);};
   } else if (msg.positive) {
     posHandler = ()=>{
       msg.new = false;
@@ -424,7 +425,7 @@ function showMessage(msgid, persist) {
       Bangle.messageResponse(msg,true);
       returnToCheckMessages();
     };
-    rowRightDraw = function(r) {g.setColor("#0f0").drawImage(atob("QRABAAAAAAAAAAOAAAAABgAAA8AAAAADgAAD4AAAAAHgAAPgAAAAAPgAA+AAAAAAfgAD4///////gAPh///////gA+D///////AD4H//////8cPgAAAAAAPw8+AAAAAAAfB/4AAAAAAA8B/gAAAAAABwB+AAAAAAADAB4AAAAAAAAABgAA=="),r.x+r.w-62,r.y);};
+    rowRightDraw = function(r) {g.setColor("#0f0").drawImage(atob("QRABAAAAAAAAAAOAAAAABgAAA8AAAAADgAAD4AAAAAHgAAPgAAAAAPgAA+AAAAAAfgAD4///////gAPh///////gA+D///////AD4H//////8cPgAAAAAAPw8+AAAAAAAfB/4AAAAAAA8B/gAAAAAABwB+AAAAAAADAB4AAAAAAAAABgAA=="),r.x+r.w-64,r.y+2);};
   }
   let fontHeight = g.setFont(bodyFont).getFontHeight();
   let lineHeight = (fontHeight>25)?fontHeight:25;
@@ -447,8 +448,7 @@ function showMessage(msgid, persist) {
       if (idx) {
         let lidx = idx*linesPerRow+textLineOffset;
         g.setBgColor(g.theme.bg).setColor(g.theme.fg).clearRect(r.x,r.y,r.x+r.w, r.y+r.h);
-        g.setFont(bodyFont).setFontAlign(0,-1);
-        g.drawString(lines[lidx++]||"", r.x+r.w/2, r.y).drawString(lines[lidx++]||"", r.x+r.w/2, r.y+lineHeight);
+        g.setFont(bodyFont).setFontAlign(0,-1).drawString(lines[lidx++]||"", r.x+r.w/2, r.y).drawString(lines[lidx++]||"", r.x+r.w/2, r.y+lineHeight);
         if (linesPerRow==3) g.drawString(lines[lidx++]||"", r.x+r.w/2, r.y+lineHeight*2);
         if (idx!=1) return;
         if (rowLeftDraw) rowLeftDraw(r);
@@ -458,7 +458,7 @@ function showMessage(msgid, persist) {
         var mid = (r.w-48)/2;
         g.setColor(g.theme.fg2).setFont(srcFont).setFontAlign(0,-1).drawString(src, mid, r.y+2);
         let srcHeight = g.getFontHeight();
-        g.setFont(titleFont).setFontAlign(0,0).drawString(title, mid, r.y+ (r.h+srcHeight)/2);
+        g.setFont(titleFont).setFontAlign(0,0).drawString(title, mid, r.y+ (r.h+srcHeight+4)/2);
         //g.setColor(g.theme.bgH).fillRect({x:r.x+r.w-47, y:r.y+3, w:44, h:44, r:6});
         g.setColor(msgCol).drawImage(msgIcon, r.x+r.w-24, r.y + rowHeight/2, {rotate:0/*center*/});
       }
