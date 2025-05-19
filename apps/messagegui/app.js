@@ -19,7 +19,7 @@ require("messages").pushMessage({"t":"add","id":23232,"src":"Skype","title":"Mr.
 require("messages").pushMessage({"t":"add","id":23233,"src":"Skype","title":"Thyttan test","body":"Nummerplåtsbelysning trodo",positive:1,negative:1})
 require("messages").pushMessage({"t":"add","id":23234,"src":"Skype","title":"Thyttan test 2","body":"Nummerplåtsbelysning trodo Nummerplåtsbelysning trodo Nummerplåtsbelysning trodo Nummerplåtsbelysning trodo Nummerplåtsbelysning trodo Nummerplåtsbelysning trodo",positive:1,negative:1})
 // maps
-GB({t:"nav",src:"maps",title:"Navigation",instr:"High St towards Tollgate Rd",distance:"966yd",action:"continue",eta:"08:39"})
+GB({t:"nav",src:"maps",title:"Navigation",instr:"High St towards Tollgate Rd",distance:"966m",action:"continue",eta:"08:39"})
 GB({t:"nav",src:"maps",title:"Navigation",instr:"High St",distance:"12km",action:"left_slight",eta:"08:39"})
 GB({t:"nav",src:"maps",title:"Navigation",instr:"Main St / I-29 ALT / Centerpoint Dr",distance:12345,action:"left_slight",eta:"08:39"})
 // call
@@ -417,7 +417,7 @@ function showMessage(msgid, persist) {
           showMessage(msg.id);
         });
     };
-    rowRightDraw = function(r) {g.setColor("#0f0").drawImage(atob("QRABAAAAAAAH//+AAAAABgP//8AAAAADgf//4AAAAAHg4ABwAAAAAPh8APgAAAAAfj+B////////geHv///////hf+f///////GPw///////8cGBwAAAAAPx/gDgAAAAAfD/gHAAAAAA8DngOAAAAABwDHP8AAAAADACGf4AAAAAAAAM/w=="),r.x+r.w-64,r.y+2);};
+    rowRightDraw = function(r) {g.setColor("#0f0").drawImage(atob("QRABAAAAAAAH//+AAAAABgP//8AAAAADgf//4AAAAAHg4ABwAAAAAPh8APgAAAAAfj+B////////geHv///////hf+f///////GPw///////8cGBwAAAAAPx/gDgAAAAAfD/gHAAAAAA8DngOAAAAABwDHP8AAAAADACGf4AAAAAAAAM/w=="),r.x+r.w-67,r.y+2);};
   } else if (msg.positive) {
     posHandler = ()=>{
       msg.new = false;
