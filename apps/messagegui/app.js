@@ -429,6 +429,7 @@ function showMessage(msgid, persist) {
   }
   let fontHeight = g.setFont(bodyFont).getFontHeight();
   let lineHeight = (fontHeight>25)?fontHeight:25;
+  if (title.includes("\n")) lineHeight=25; // ensure enough room for 2 lines of title in header
   let linesPerRow = 2;
   if (fontHeight<17) {
     lineHeight = 16;
@@ -445,7 +446,7 @@ function showMessage(msgid, persist) {
     c : Math.ceil((lines.length-textLineOffset) / linesPerRow), // number of menu items
     // a function to draw a menu item
     draw : function(idx, r) { "ram";
-      if (idx) {
+      if (idx) { // message body
         let lidx = idx*linesPerRow+textLineOffset;
         g.setBgColor(g.theme.bg).setColor(g.theme.fg).clearRect(r.x,r.y,r.x+r.w, r.y+r.h);
         g.setFont(bodyFont).setFontAlign(0,-1).drawString(lines[lidx++]||"", r.x+r.w/2, r.y).drawString(lines[lidx++]||"", r.x+r.w/2, r.y+lineHeight);
@@ -455,10 +456,11 @@ function showMessage(msgid, persist) {
         if (rowRightDraw) rowRightDraw(r);
       } else { // idx==0 => header
         g.setBgColor(g.theme.bg2).setColor(g.theme.fg).clearRect(r.x,r.y,r.x+r.w, r.y+r.h);
+        if (!settings.showWidgets && Bangle.isLocked()) g.drawImage(atob("DhABH+D/wwMMDDAwwMf/v//4f+H/h/8//P/z///f/g=="), r.x+1,r.y+4); // locked symbol
         var mid = (r.w-48)/2;
         g.setColor(g.theme.fg2).setFont(srcFont).setFontAlign(0,-1).drawString(src, mid, r.y+2);
         let srcHeight = g.getFontHeight();
-        g.setFont(titleFont).setFontAlign(0,0).drawString(title, mid, r.y+ (r.h+srcHeight+4)/2);
+        g.setFont(titleFont).setFontAlign(0,0).drawString(title, mid, r.y+ (r.h+srcHeight+2)/2);
         //g.setColor(g.theme.bgH).fillRect({x:r.x+r.w-47, y:r.y+3, w:44, h:44, r:6});
         g.setColor(msgCol).drawImage(msgIcon, r.x+r.w-24, r.y + rowHeight/2, {rotate:0/*center*/});
       }
@@ -471,6 +473,7 @@ function showMessage(msgid, persist) {
     remove : function() {
       Bangle.removeListener("drag", dragHandler);
       Bangle.removeListener("swipe", swipeHandler);
+      Bangle.removeListener("lock", lockHandler);
       if (!settings.showWidgets) require("widget_utils").show();
     },
     back : function() {
@@ -497,6 +500,8 @@ function showMessage(msgid, persist) {
     finger movement will end up dragging the new message */
   };
   Bangle.on("swipe", swipeHandler);
+  let lockHandler = () => scroller.draw();
+  Bangle.on("lock",lockHandler); // redraw when we lock/unlock
 }
 
 
